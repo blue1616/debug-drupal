@@ -1,0 +1,53 @@
+version: "2.2"
+services:
+  drupal-vuln:
+    image: drupal-xdebug:7.57-apache
+    build: ./build/drupal
+    volumes:
+      - drupal-contents:/var/www/html/
+    links:
+      - drupal-db
+    networks:
+      drupal-debug:
+        ipv4_address: 172.42.0.3
+    ports:
+      - 80:80
+    expose:
+      - 9000
+  drupal-db:
+    image: mysql_drupal:5.7
+    build: ./build/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+    networks:
+      drupal-debug:
+        ipv4_address: 172.42.0.2
+    expose:
+      - 3306
+  netbeans-php:
+    image: netbeans:latest
+    build: ./build/netbeans
+    links:
+      - drupal-vuln
+    environment:
+      - DISPLAY
+    volumes:
+      - /tmp/.X11-unix/:/tmp/.X11-unix
+      - drupal-contents:/root/project/drupal
+    networks:
+      drupal-debug:
+        ipv4_address: 172.42.0.4
+volumes:
+  drupal-contents:
+#    driver_opts:
+#      type: none
+#      device: $PWD/contents
+#      o: bind
+networks:
+  drupal-debug:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.42.0.0/24
+          gateway: 172.42.0.1
+
